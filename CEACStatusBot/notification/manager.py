@@ -42,6 +42,5 @@ class NotificationManager():
             json.dump({'statuses': statuses}, file)
 
     def __send_notifications(self, res: dict) -> None:
-        print('Start Sending')
         for notificationHandle in self.__handleList:
             notificationHandle.send(res)
