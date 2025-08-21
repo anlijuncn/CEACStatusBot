@@ -66,3 +66,4 @@ except KeyError:
     print("Telegram bot notification config error")
 
 notificationManager.send()
+print("Notification Sent!")
