@@ -30,7 +30,6 @@ class NotificationManager():
             self.__save_current_status(current_status)
             self.__send_notifications(res)
         else:
-            self.__send_notifications(res)
             print("Status unchanged. No notification sent.")
 
     def __load_statuses(self) -> list:
