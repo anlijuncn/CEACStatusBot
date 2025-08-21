@@ -19,21 +19,34 @@ class EmailNotificationHandle(NotificationHandle):
         else:
             self.__hostPort = 0
 
-    def send(self,result):
-        
-        # {'success': True, 'visa_type': 'NONIMMIGRANT VISA APPLICATION', 'status': 'Issued', 'case_created': '30-Aug-2022', 'case_last_updated': '19-Oct-2022', 'description': 'Your visa is in final processing. If you have not received it in more than 10 working days, please see the webpage for contact information of the embassy or consulate where you submitted your application.', 'application_num': '***'}
-
-        mail_title = '[CEACStatusBot] {} : {}'.format(result["application_num_origin"],result['status'])
+    def send(self, result):
+        # 标题与正文
+        mail_title = '[CEACStatusBot] {} : {}'.format(
+            result["application_num_origin"], result['status']
+        )
         mail_content = str(result)
-
+    
+        # 构建邮件
         msg = MIMEMultipart()
-        msg["Subject"] = Header(mail_title,'utf-8')
+        msg["Subject"] = Header(mail_title, 'utf-8')
         msg["From"] = self.__fromEmail
-        msg['To'] = ";".join(self.__toEmail)
-        msg.attach(MIMEText(mail_content,'plain','utf-8'))
-
-        smtp = SMTP_SSL(self.__hostAddress, self.__hostPort) # ssl登录
-        smtpserver.ehlo()
-        print(smtp.login(self.__fromEmail,self.__emailPassword))
-        print(smtp.sendmail(self.__fromEmail,self.__toEmail,msg.as_string()))
-        smtp.quit()
+        msg["To"] = ",".join(self.__toEmail)   # 头部显示用逗号
+        msg.attach(MIMEText(mail_content, 'plain', 'utf-8'))
+    
+        # 主机与端口兜底
+        host = self.__hostAddress or "smtp.gmail.com"
+        port = getattr(self, "_EmailNotificationHandle__hostPort", None) or 465
+    
+        try:
+            with SMTP_SSL(host, port) as smtp:
+                # 对于 Gmail：请使用 App Password
+                login_resp = smtp.login(self.__fromEmail, self.__emailPassword)
+                print("LOGIN:", login_resp)  # 可选：('235', b'2.7.0 Accepted') 类似
+    
+                # 第二个参数必须是收件人列表
+                send_resp = smtp.sendmail(self.__fromEmail, self.__toEmail, msg.as_string())
+                print("SENDMAIL:", send_resp)  # 通常为空字典 {} 表示成功
+        except Exception as e:
+            # 便于调试
+            print("SMTP ERROR:", repr(e))
+            raise
